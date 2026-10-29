@@ -1,0 +1,91 @@
+# =====================================================================
+# BESS LCOS & Monte Carlo IRR - single source of truth for assumptions
+# All monetary values in real 2024 US$ (no inflation, pre-tax, unlevered).
+# `source` tags:  NREL2025 = Cole, Ramasamy & Turan (2025), NREL/TP-6A40-93281
+#                 ILLUSTRATIVE = author assumption, NOT from a verified source
+#                 SYNTHETIC = made-up market input for demonstration only
+# =====================================================================
+
+project:
+  power_mw: 100.0                 # ILLUSTRATIVE design choice
+  duration_h: 2.0                 # ILLUSTRATIVE design choice (2-hour system)
+  lifetime_years: 15              # NREL2025: selected lifetime 15 years
+  build_year: 2026                # ILLUSTRATIVE: capex spent in year 0 (2026)
+  cycles_per_year: 365            # ILLUSTRATIVE: ~1 full cycle/day (NREL2025 FOM premise)
+  availability: 0.97              # ILLUSTRATIVE
+  round_trip_efficiency: 0.85     # NREL2025: RTE chosen to be 85%
+
+capex:
+  energy_cost_per_kwh: 241.0      # NREL2025: 2024 energy cost component, 2024$/kWh
+  power_cost_per_kw: 372.0        # NREL2025: 2024 power cost component, 2024$/kW
+  # NREL2025 Table 2 normalised 4-h cost (2024 = 1.00). Mid case for 2026:
+  cost_multiplier: 0.92           # NREL2025 Table 2, 2026 Mid
+  cost_multiplier_low: 0.77       # NREL2025 Table 2, 2026 Low
+  cost_multiplier_high: 1.10      # NREL2025 Table 2, 2026 High
+
+opex:
+  # NREL2025 uses FOM = 4% of capex/yr INCLUDING augmentation and VOM = 0.
+  # Here augmentation is modelled explicitly (below), so routine FOM is set
+  # lower. The run reports the implied (FOM + augmentation) % of capex/yr
+  # so it can be compared with NREL's 4% benchmark.
+  fixed_om_pct_capex: 0.025       # ILLUSTRATIVE (routine O&M excl. augmentation)
+  variable_om_per_mwh: 0.0        # NREL2025: VOM assumed zero
+
+degradation:
+  annual_fade: 0.02               # ILLUSTRATIVE: linear usable-energy fade per year
+  augmentation_years: [5, 10]     # ILLUSTRATIVE: top-up lost capacity at end of these years
+  # Augmentation priced at the NREL2025 energy-cost component scaled by the
+  # NREL2025 Table 2 Mid normalised curve for that calendar year.
+  nrel_mid_curve:                 # NREL2025 Table 2, Mid column (normalised)
+    2026: 0.92
+    2027: 0.90
+    2028: 0.88
+    2029: 0.86
+    2030: 0.84
+    2031: 0.81
+    2032: 0.79
+    2033: 0.77
+    2034: 0.75
+    2035: 0.73
+    2036: 0.71
+    2037: 0.70
+    2038: 0.69
+    2039: 0.68
+    2040: 0.66
+    2041: 0.65
+
+revenue:                          # ALL SYNTHETIC - not market data
+  discharge_price_per_mwh: 115.0  # SYNTHETIC average realised discharge price
+  charge_price_per_mwh: 35.0      # SYNTHETIC average charging price
+  capacity_revenue_per_kw_yr: 50.0  # SYNTHETIC capacity/ancillary payment
+
+finance:
+  discount_rate: 0.07             # ILLUSTRATIVE real, pre-tax WACC
+  hurdle_irr: 0.08                # ILLUSTRATIVE real, pre-tax hurdle
+  residual_value_pct_capex: 0.0   # ILLUSTRATIVE: no salvage, no decommissioning cost
+
+monte_carlo:
+  n_draws: 10000
+  seed: 42
+  # Triangular(low, mode, high) unless stated. Capex range = NREL2025 2026 Low/Mid/High.
+  distributions:
+    cost_multiplier:            {dist: triangular, low: 0.77, mode: 0.92, high: 1.10}   # NREL2025
+    discharge_price_per_mwh:    {dist: triangular, low: 85.0, mode: 115.0, high: 145.0}  # SYNTHETIC
+    charge_price_per_mwh:       {dist: triangular, low: 20.0, mode: 35.0, high: 55.0}    # SYNTHETIC
+    capacity_revenue_per_kw_yr: {dist: triangular, low: 25.0, mode: 50.0, high: 70.0}    # SYNTHETIC
+    annual_fade:                {dist: triangular, low: 0.01, mode: 0.02, high: 0.035}   # ILLUSTRATIVE
+    availability:               {dist: triangular, low: 0.92, mode: 0.97, high: 0.99}    # ILLUSTRATIVE
+    fixed_om_pct_capex:         {dist: triangular, low: 0.015, mode: 0.025, high: 0.04}  # ILLUSTRATIVE
+    round_trip_efficiency:      {dist: triangular, low: 0.82, mode: 0.85, high: 0.88}    # ILLUSTRATIVE around NREL2025
+    discount_rate:              {dist: uniform, low: 0.06, high: 0.09}                   # ILLUSTRATIVE
+
+tornado:                          # (low, high) swings, one-at-a-time around base case
+  cost_multiplier: [0.77, 1.10]
+  discharge_price_per_mwh: [85.0, 145.0]
+  charge_price_per_mwh: [20.0, 55.0]
+  capacity_revenue_per_kw_yr: [25.0, 70.0]
+  annual_fade: [0.01, 0.035]
+  availability: [0.92, 0.99]
+  fixed_om_pct_capex: [0.015, 0.04]
+  round_trip_efficiency: [0.82, 0.88]
+  discount_rate: [0.06, 0.09]

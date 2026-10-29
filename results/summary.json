@@ -1,0 +1,161 @@
+{
+  "base_case": {
+    "capex_usd": 78568000.0,
+    "capex_usd_per_kw": 785.68,
+    "capex_usd_per_kwh": 392.84,
+    "lcos_usd_per_mwh": 205.5265319247931,
+    "lcos_breakdown_usd_per_mwh": {
+      "Capex": 121.8238112344116,
+      "Fixed O&M": 27.739019912441748,
+      "Variable O&M": 0.0,
+      "Augmentation": 7.01363533346013,
+      "Charging energy": 33.34453472206871,
+      "RTE losses": 5.884329656835655,
+      "Residual value": 0.0,
+      "Degradation (lost throughput)": 9.721201065575258
+    },
+    "npv_usd": -10082355.103172522,
+    "irr": 0.04892975037219004,
+    "simple_payback_years": 10.715589158633763,
+    "discounted_payback_years": null,
+    "year1_discharged_mwh": 70101.9,
+    "lifetime_discharged_mwh": 1009042.4999999999,
+    "implied_fom_plus_augmentation_pct_capex_per_yr": 0.03121661066422293,
+    "discount_rate": 0.07,
+    "hurdle_irr": 0.08
+  },
+  "tornado": {
+    "top_irr_driver": "capacity_revenue_per_kw_yr",
+    "top_irr_driver_range": [
+      -0.005407156993169331,
+      0.0861098081222735
+    ],
+    "top_lcos_driver": "cost_multiplier",
+    "top_lcos_driver_range": [
+      178.73032627209344,
+      237.6819787080327
+    ],
+    "irr_swing_ranking": [
+      {
+        "parameter": "capacity_revenue_per_kw_yr",
+        "irr_low": -0.005407156993169331,
+        "irr_high": 0.0861098081222735
+      },
+      {
+        "parameter": "discharge_price_per_mwh",
+        "irr_low": 0.006034079056698833,
+        "irr_high": 0.08655315662501378
+      },
+      {
+        "parameter": "cost_multiplier",
+        "irr_low": 0.08513302343199028,
+        "irr_high": 0.014840178277809177
+      },
+      {
+        "parameter": "charge_price_per_mwh",
+        "irr_low": 0.0715380386938341,
+        "irr_high": 0.01589719463372604
+      },
+      {
+        "parameter": "fixed_om_pct_capex",
+        "irr_low": 0.06402199007803575,
+        "irr_high": 0.024747522694524383
+      },
+      {
+        "parameter": "annual_fade",
+        "irr_low": 0.0561950042587705,
+        "irr_high": 0.03764791662106291
+      },
+      {
+        "parameter": "availability",
+        "irr_low": 0.04384021086385474,
+        "irr_high": 0.0509422825812362
+      },
+      {
+        "parameter": "round_trip_efficiency",
+        "irr_low": 0.04692502625053749,
+        "irr_high": 0.05078621071996167
+      },
+      {
+        "parameter": "discount_rate",
+        "irr_low": 0.04892975037219004,
+        "irr_high": 0.04892975037219004
+      }
+    ],
+    "lcos_swing_ranking": [
+      {
+        "parameter": "cost_multiplier",
+        "lcos_low": 178.73032627209344,
+        "lcos_high": 237.6819787080327
+      },
+      {
+        "parameter": "charge_price_per_mwh",
+        "lcos_low": 187.87947310126367,
+        "lcos_high": 229.05594368949895
+      },
+      {
+        "parameter": "fixed_om_pct_capex",
+        "lcos_low": 193.8800572622703,
+        "lcos_high": 222.99624391857725
+      },
+      {
+        "parameter": "discount_rate",
+        "lcos_low": 197.63872240551711,
+        "lcos_high": 221.9627504302023
+      },
+      {
+        "parameter": "annual_fade",
+        "lcos_low": 197.9538260933122,
+        "lcos_high": 217.61778723358688
+      },
+      {
+        "parameter": "availability",
+        "lcos_low": 214.45860047569292,
+        "lcos_high": 202.20632866546862
+      },
+      {
+        "parameter": "round_trip_efficiency",
+        "lcos_low": 207.03298816582608,
+        "lcos_high": 204.12278860928504
+      },
+      {
+        "parameter": "capacity_revenue_per_kw_yr",
+        "lcos_low": 205.5265319247931,
+        "lcos_high": 205.5265319247931
+      },
+      {
+        "parameter": "discharge_price_per_mwh",
+        "lcos_low": 205.5265319247931,
+        "lcos_high": 205.5265319247931
+      }
+    ]
+  },
+  "monte_carlo": {
+    "n_draws": 10000,
+    "n_irr_undefined": 0,
+    "irr_p10": -0.007789080291006243,
+    "irr_p50": 0.036725525233743395,
+    "irr_p90": 0.07605825996151312,
+    "irr_mean": 0.03530583685017327,
+    "prob_irr_above_hurdle": 0.0802,
+    "npv_p10": -36932332.250681676,
+    "npv_p50": -17730906.78866844,
+    "npv_p90": 1341979.6982801277,
+    "prob_npv_positive": 0.1152,
+    "lcos_p10": 194.6705380033748,
+    "lcos_p50": 217.9916863247448,
+    "lcos_p90": 242.89594322356763,
+    "seed": 42,
+    "spearman_rho_vs_irr": {
+      "capacity_revenue_per_kw_yr": 0.552766301911663,
+      "discharge_price_per_mwh": 0.5084308623323085,
+      "cost_multiplier": -0.40878856061588553,
+      "charge_price_per_mwh": -0.34024984075849835,
+      "fixed_om_pct_capex": -0.2509888247898882,
+      "annual_fade": -0.11983745645837454,
+      "availability": 0.042373461291734596,
+      "round_trip_efficiency": 0.01616645144966451,
+      "discount_rate": 0.002319084575190847
+    }
+  }
+}

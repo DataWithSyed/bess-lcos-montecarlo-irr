@@ -1,0 +1,18 @@
+Capex: 78.57 M$  (785.7 $/kW, 392.8 $/kWh)
+LCOS: 205.53 $/MWh
+   Capex                              121.82
+   Fixed O&M                           27.74
+   Variable O&M                         0.00
+   Augmentation                         7.01
+   Charging energy                     33.34
+   RTE losses                           5.88
+   Residual value                       0.00
+   Degradation (lost throughput)        9.72
+NPV @ 7.0%: -10.08 M$ | IRR: 4.89% | payback 10.72 y (discounted: not reached within life)
+Implied FOM + augmentation: 3.12% of capex/yr (NREL 2025 benchmark: 4%)
+Top IRR driver: capacity_revenue_per_kw_yr (-0.54% .. 8.61%)
+Top LCOS driver: cost_multiplier (178.73 .. 237.68)
+MC n=10000 seed=42: IRR P10/P50/P90 = -0.78/3.67/7.61% | P(IRR>8%) = 8.0% | undefined IRR: 0
+   NPV P10/P50/P90 = -36.93/-17.73/1.34 M$ | P(NPV>0) = 11.5%
+   LCOS P10/P50/P90 = 194.67/217.99/242.90 $/MWh
+   Spearman rho vs IRR: {'capacity_revenue_per_kw_yr': 0.553, 'discharge_price_per_mwh': 0.508, 'cost_multiplier': -0.409, 'charge_price_per_mwh': -0.34, 'fixed_om_pct_capex': -0.251, 'annual_fade': -0.12, 'availability': 0.042, 'round_trip_efficiency': 0.016, 'discount_rate': 0.002}

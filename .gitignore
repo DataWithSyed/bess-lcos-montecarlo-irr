@@ -1,0 +1,22 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# Large regenerated outputs (re-create with `python run_all.py`)
+results/monte_carlo_draws.csv.gz
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
