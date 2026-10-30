@@ -16,3 +16,7 @@ MC n=10000 seed=42: IRR P10/P50/P90 = -0.78/3.67/7.61% | P(IRR>8%) = 8.0% | unde
    NPV P10/P50/P90 = -36.93/-17.73/1.34 M$ | P(NPV>0) = 11.5%
    LCOS P10/P50/P90 = 194.67/217.99/242.90 $/MWh
    Spearman rho vs IRR: {'capacity_revenue_per_kw_yr': 0.553, 'discharge_price_per_mwh': 0.508, 'cost_multiplier': -0.409, 'charge_price_per_mwh': -0.34, 'fixed_om_pct_capex': -0.251, 'annual_fade': -0.12, 'availability': 0.042, 'round_trip_efficiency': 0.016, 'discount_rate': 0.002}
+Augmentation study [fixed capacity payment]: base (OB 0%/5 y) NPV -10.08 M$, LCOS 205.53 | best NPV: OB 0% / no augmentation -9.27 M$ (LCOS 212.14) | lowest LCOS: OB 0% / augment every 2 y 203.72 (NPV -10.58 M$)
+   MC most often best: [('OB 0% / no augmentation', 0.892, 0.055), ('OB 0% / augment every 3 y', 0.102, 1.372), ('OB 0% / augment every 5 y', 0.005, 1.115)] | base-case strategy best in 0.005 regret 1.115 M$
+Augmentation study [soh_linked capacity payment]: base (OB 0%/5 y) NPV -12.24 M$, LCOS 205.53 | best NPV: OB 0% / augment every 2 y -11.46 M$ (LCOS 203.72) | lowest LCOS: OB 0% / augment every 2 y 203.72 (NPV -11.46 M$)
+   MC most often best: [('OB 0% / augment every 2 y', 0.536, 0.084), ('OB 5% / augment every 3 y', 0.229, 0.449), ('OB 0% / augment every 3 y', 0.21, 0.195)] | base-case strategy best in 0.0 regret 0.762 M$

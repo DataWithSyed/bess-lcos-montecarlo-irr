@@ -157,3 +157,36 @@ def cashflow_plot(df: pd.DataFrame, path: Path) -> None:
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
+
+
+def augmentation_heatmaps(grid: pd.DataFrame, path: Path) -> None:
+    """LCOS and NPV over (overbuild x augmentation interval) for both capacity-revenue rules."""
+    fig, axes = plt.subplots(1, 3, figsize=(17, 4.8))
+    panels = [("lcos_usd_per_mwh", "fixed", "LCOS ($/MWh), lower is better", "viridis_r", "min"),
+              ("npv_musd", "fixed", "NPV (M$), fixed $/kW-yr capacity payment", "viridis", "max"),
+              ("npv_musd", "soh_linked", "NPV (M$), capacity payment scaled by usable energy", "viridis", "max")]
+    for ax, (col, rule, title, cmap, best) in zip(axes, panels):
+        g = grid[grid.capacity_rule == rule]
+        hm = g.pivot(index="initial_overbuild", columns="interval_years", values=col)
+        im = ax.imshow(hm.values, origin="lower", aspect="auto", cmap=cmap)
+        ax.set_xticks(range(len(hm.columns)))
+        ax.set_xticklabels(["never" if c == 0 else str(c) for c in hm.columns])
+        ax.set_yticks(range(len(hm.index)))
+        ax.set_yticklabels([f"{v*100:.0f}%" for v in hm.index])
+        ax.set_xlabel("augmentation interval (years)")
+        ax.set_ylabel("day-1 overbuild")
+        ax.set_title(title, fontsize=10)
+        bi = np.unravel_index(np.nanargmin(hm.values) if best == "min" else np.nanargmax(hm.values), hm.shape)
+        for i in range(hm.shape[0]):
+            for j in range(hm.shape[1]):
+                ax.text(j, i, f"{hm.values[i, j]:.1f}", ha="center", va="center", fontsize=7,
+                        color="k" if (i, j) == bi else "w", fontweight="bold" if (i, j) == bi else None)
+        ax.add_patch(plt.Rectangle((bi[1] - 0.5, bi[0] - 0.5), 1, 1, fill=False, ec="gold", lw=2.5))
+        if 5 in list(hm.columns) and 0.0 in list(hm.index):  # base case marker
+            ax.add_patch(plt.Rectangle((list(hm.columns).index(5) - 0.5, list(hm.index).index(0.0) - 0.5), 1, 1,
+                                       fill=False, ec="red", lw=1.5, ls="--"))
+        fig.colorbar(im, ax=ax, fraction=0.046)
+    fig.suptitle("Augmentation / overbuild strategies (gold = best, red dashed = base case: no overbuild, augment every 5 y)", fontsize=10)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)

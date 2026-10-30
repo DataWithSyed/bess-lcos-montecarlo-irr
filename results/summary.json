@@ -148,14 +148,98 @@
     "seed": 42,
     "spearman_rho_vs_irr": {
       "capacity_revenue_per_kw_yr": 0.552766301911663,
-      "discharge_price_per_mwh": 0.5084308623323085,
-      "cost_multiplier": -0.40878856061588553,
-      "charge_price_per_mwh": -0.34024984075849835,
+      "discharge_price_per_mwh": 0.5084308623323086,
+      "cost_multiplier": -0.4087885606158856,
+      "charge_price_per_mwh": -0.3402498407584984,
       "fixed_om_pct_capex": -0.2509888247898882,
-      "annual_fade": -0.11983745645837454,
-      "availability": 0.042373461291734596,
-      "round_trip_efficiency": 0.01616645144966451,
-      "discount_rate": 0.002319084575190847
+      "annual_fade": -0.11983745645837456,
+      "availability": 0.04237346129173461,
+      "round_trip_efficiency": 0.016166451449664512,
+      "discount_rate": 0.002319084575190846
+    }
+  },
+  "augmentation_study": {
+    "fixed": {
+      "base_case_strategy": {
+        "npv_musd": -10.082355103172523,
+        "lcos": 205.5265319247931,
+        "irr": 0.04892975037219004
+      },
+      "best_npv_strategy": {
+        "strategy": "OB 0% / no augmentation",
+        "npv_musd": -9.266370513827722,
+        "lcos": 212.1378335995431,
+        "irr": 0.05008268499514089
+      },
+      "lowest_lcos_strategy": {
+        "strategy": "OB 0% / augment every 2 y",
+        "npv_musd": -10.578875394840322,
+        "lcos": 203.72497975594342,
+        "irr": 0.048010918444488196
+      },
+      "mc_draws": 1000,
+      "mc_most_often_best": [
+        {
+          "strategy": "OB 0% / no augmentation",
+          "share_best_npv": 0.892,
+          "mean_regret_musd": 0.05487554357663382
+        },
+        {
+          "strategy": "OB 0% / augment every 3 y",
+          "share_best_npv": 0.102,
+          "mean_regret_musd": 1.3722004586407173
+        },
+        {
+          "strategy": "OB 0% / augment every 5 y",
+          "share_best_npv": 0.005,
+          "mean_regret_musd": 1.114998662126548
+        }
+      ],
+      "mc_base_case_strategy": {
+        "share_best_npv": 0.005,
+        "mean_regret_musd": 1.114998662126548
+      }
+    },
+    "soh_linked": {
+      "base_case_strategy": {
+        "npv_musd": -12.23633158743571,
+        "lcos": 205.5265319247931,
+        "irr": 0.04414187214104458
+      },
+      "best_npv_strategy": {
+        "strategy": "OB 0% / augment every 2 y",
+        "npv_musd": -11.456757471205286,
+        "lcos": 203.72497975594342,
+        "irr": 0.04611136349616572
+      },
+      "lowest_lcos_strategy": {
+        "strategy": "OB 0% / augment every 2 y",
+        "npv_musd": -11.456757471205286,
+        "lcos": 203.72497975594342,
+        "irr": 0.04611136349616572
+      },
+      "mc_draws": 1000,
+      "mc_most_often_best": [
+        {
+          "strategy": "OB 0% / augment every 2 y",
+          "share_best_npv": 0.536,
+          "mean_regret_musd": 0.08402107458944849
+        },
+        {
+          "strategy": "OB 5% / augment every 3 y",
+          "share_best_npv": 0.229,
+          "mean_regret_musd": 0.449400169838078
+        },
+        {
+          "strategy": "OB 0% / augment every 3 y",
+          "share_best_npv": 0.21,
+          "mean_regret_musd": 0.19477939818991694
+        }
+      ],
+      "mc_base_case_strategy": {
+        "share_best_npv": 0.0,
+        "mean_regret_musd": 0.7615946907561383
+      }
     }
   }
 }

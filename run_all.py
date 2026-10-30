@@ -10,10 +10,13 @@ import json
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from bess_tea import plots  # noqa: E402
+from bess_tea.augmentation import evaluate_grid, robustness, strategy_grid  # noqa: E402
 from bess_tea.cashflow import build_cashflows, project_metrics  # noqa: E402
 from bess_tea.config import DEFAULT_CONFIG, base_params, load_config  # noqa: E402
 from bess_tea.lcos import COMPONENTS, lcos_breakdown  # noqa: E402
@@ -25,6 +28,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=str(DEFAULT_CONFIG))
     ap.add_argument("--draws", type=int, default=None, help="override Monte Carlo draws")
+    ap.add_argument("--aug-draws", type=int, default=None, help="override augmentation robustness draws (0 = skip)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -57,12 +61,44 @@ def main() -> None:
     rc = rank_correlations(res, list(mc_cfg["distributions"]), "irr")
     rc.rename("spearman_rho_vs_irr").to_csv(res_dir / "mc_rank_correlation_irr.csv")
 
-    # 4) figures
+    # 4) augmentation / overbuild strategy study (two capacity-revenue rules) + Monte Carlo robustness
+    acfg = cfg["augmentation_study"]
+    strategies = strategy_grid(acfg["intervals_years"], acfg["overbuilds"], int(p["lifetime_years"]))
+    rules = {"fixed": False, "soh_linked": True}
+    aug = pd.concat([evaluate_grid(dict(p, capacity_credit_tracks_soh=v), strategies).assign(capacity_rule=k)
+                     for k, v in rules.items()], ignore_index=True)
+    aug.round(5).to_csv(res_dir / "augmentation_strategies.csv", index=False)
+    n_aug = acfg["mc_draws"] if args.aug_draws is None else args.aug_draws
+    rob = pd.DataFrame()
+    if n_aug > 0:
+        rob = pd.concat([robustness(dict(p, capacity_credit_tracks_soh=v), strategies, mc_cfg["distributions"],
+                                    n_aug, mc_cfg["seed"]).assign(capacity_rule=k) for k, v in rules.items()],
+                        ignore_index=True)
+        rob.round(5).to_csv(res_dir / "augmentation_robustness.csv", index=False)
+    aug_summary = {}
+    for k in rules:
+        g = aug[aug.capacity_rule == k]
+        base_row = g[(g.initial_overbuild == 0.0) & (g.interval_years == 5)].iloc[0]
+        bn, bl = g.loc[g.npv_musd.idxmax()], g.loc[g.lcos_usd_per_mwh.idxmin()]
+        aug_summary[k] = {
+            "base_case_strategy": {"npv_musd": base_row.npv_musd, "lcos": base_row.lcos_usd_per_mwh, "irr": base_row.irr},
+            "best_npv_strategy": {"strategy": bn.strategy, "npv_musd": bn.npv_musd, "lcos": bn.lcos_usd_per_mwh, "irr": bn.irr},
+            "lowest_lcos_strategy": {"strategy": bl.strategy, "npv_musd": bl.npv_musd, "lcos": bl.lcos_usd_per_mwh, "irr": bl.irr},
+        }
+        if len(rob):
+            r = rob[rob.capacity_rule == k].sort_values("share_best_npv", ascending=False)
+            aug_summary[k]["mc_draws"] = int(n_aug)
+            aug_summary[k]["mc_most_often_best"] = r.head(3)[["strategy", "share_best_npv", "mean_regret_musd"]].to_dict("records")
+            br = rob[(rob.capacity_rule == k) & (rob.strategy == "OB 0% / augment every 5 y")].iloc[0]
+            aug_summary[k]["mc_base_case_strategy"] = {"share_best_npv": br.share_best_npv, "mean_regret_musd": br.mean_regret_musd}
+
+    # 5) figures
     plots.lcos_waterfall(bd, fig_dir / "lcos_breakdown.png")
     plots.tornado_plot(tor, fig_dir / "tornado_irr_lcos.png", hurdle)
     plots.mc_irr_plot(res, summ, hurdle, m["irr"], fig_dir / "mc_irr_distribution.png")
     plots.mc_npv_lcos_plot(res, summ, fig_dir / "mc_npv_lcos_distribution.png")
     plots.cashflow_plot(cf, fig_dir / "base_case_cashflows.png")
+    plots.augmentation_heatmaps(aug, fig_dir / "augmentation_strategies.png")
 
     summary = {
         "base_case": {
@@ -90,6 +126,7 @@ def main() -> None:
             "lcos_swing_ranking": tor.sort_values("lcos_swing", ascending=False)[["parameter", "lcos_low", "lcos_high"]].to_dict("records"),
         },
         "monte_carlo": {**summ, "seed": mc_cfg["seed"], "spearman_rho_vs_irr": rc.to_dict()},
+        "augmentation_study": aug_summary,
     }
     def _clean(o):  # NaN -> null so summary.json is strict JSON
         if isinstance(o, dict):
@@ -120,6 +157,14 @@ def main() -> None:
     print(f"   NPV P10/P50/P90 = {s['npv_p10']/1e6:,.2f}/{s['npv_p50']/1e6:,.2f}/{s['npv_p90']/1e6:,.2f} M$ | P(NPV>0) = {s['prob_npv_positive']*100:.1f}%")
     print(f"   LCOS P10/P50/P90 = {s['lcos_p10']:.2f}/{s['lcos_p50']:.2f}/{s['lcos_p90']:.2f} $/MWh")
     print("   Spearman rho vs IRR:", {k: round(v, 3) for k, v in rc.items()})
+    for k, v in aug_summary.items():
+        print(f"Augmentation study [{k} capacity payment]: base (OB 0%/5 y) NPV {v['base_case_strategy']['npv_musd']:.2f} M$, "
+              f"LCOS {v['base_case_strategy']['lcos']:.2f} | best NPV: {v['best_npv_strategy']['strategy']} "
+              f"{v['best_npv_strategy']['npv_musd']:.2f} M$ (LCOS {v['best_npv_strategy']['lcos']:.2f}) | lowest LCOS: "
+              f"{v['lowest_lcos_strategy']['strategy']} {v['lowest_lcos_strategy']['lcos']:.2f} (NPV {v['lowest_lcos_strategy']['npv_musd']:.2f} M$)")
+        if "mc_most_often_best" in v:
+            print("   MC most often best:", [(d["strategy"], round(d["share_best_npv"], 3), round(d["mean_regret_musd"], 3)) for d in v["mc_most_often_best"]],
+                  "| base-case strategy best in", round(v["mc_base_case_strategy"]["share_best_npv"], 3), "regret", round(v["mc_base_case_strategy"]["mean_regret_musd"], 3), "M$")
 
 
 if __name__ == "__main__":

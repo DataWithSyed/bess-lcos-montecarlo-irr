@@ -34,6 +34,7 @@ opex:
 degradation:
   annual_fade: 0.02               # ILLUSTRATIVE: linear usable-energy fade per year
   augmentation_years: [5, 10]     # ILLUSTRATIVE: top-up lost capacity at end of these years
+  initial_overbuild: 0.0          # ILLUSTRATIVE: extra energy installed on day 1 (fraction of nameplate); usable capped at nameplate
   # Augmentation priced at the NREL2025 energy-cost component scaled by the
   # NREL2025 Table 2 Mid normalised curve for that calendar year.
   nrel_mid_curve:                 # NREL2025 Table 2, Mid column (normalised)
@@ -58,6 +59,7 @@ revenue:                          # ALL SYNTHETIC - not market data
   discharge_price_per_mwh: 115.0  # SYNTHETIC average realised discharge price
   charge_price_per_mwh: 35.0      # SYNTHETIC average charging price
   capacity_revenue_per_kw_yr: 50.0  # SYNTHETIC capacity/ancillary payment
+  capacity_credit_tracks_soh: false # ILLUSTRATIVE: if true, capacity revenue scales with usable energy (duration-based accreditation)
 
 finance:
   discount_rate: 0.07             # ILLUSTRATIVE real, pre-tax WACC
@@ -78,6 +80,11 @@ monte_carlo:
     fixed_om_pct_capex:         {dist: triangular, low: 0.015, mode: 0.025, high: 0.04}  # ILLUSTRATIVE
     round_trip_efficiency:      {dist: triangular, low: 0.82, mode: 0.85, high: 0.88}    # ILLUSTRATIVE around NREL2025
     discount_rate:              {dist: uniform, low: 0.06, high: 0.09}                   # ILLUSTRATIVE
+
+augmentation_study:               # strategy grid for src/bess_tea/augmentation.py (all ILLUSTRATIVE)
+  intervals_years: [0, 2, 3, 4, 5, 6, 7, 8]       # 0 = never augment; k = augment at the end of years k, 2k, ... < lifetime
+  overbuilds: [0.0, 0.05, 0.10, 0.15, 0.20, 0.30]  # day-1 extra energy as a fraction of nameplate
+  mc_draws: 1000                                   # Monte Carlo draws (same distributions and seed) for the robustness check
 
 tornado:                          # (low, high) swings, one-at-a-time around base case
   cost_multiplier: [0.77, 1.10]

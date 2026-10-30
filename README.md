@@ -2,7 +2,8 @@
 
 A compact, transparent **techno-economic toolkit for a utility-scale battery energy storage system (BESS)**:
 Levelized Cost of Storage (LCOS) with a component breakdown, an annual project cash-flow model (NPV, IRR, payback),
-one-at-a-time tornado sensitivity, and a 10,000-draw Monte Carlo over the uncertain inputs.
+one-at-a-time tornado sensitivity, a 10,000-draw Monte Carlo over the uncertain inputs, and an
+augmentation / overbuild strategy study that asks how a fading battery should be topped up.
 
 Case study: **100 MW / 200 MWh (2-hour) lithium-ion BESS**, 15-year life, real 2024 US$, pre-tax, unlevered.
 Capital cost inputs come from NREL's *Cost Projections for Utility-Scale Battery Storage: 2025 Update*.
@@ -44,6 +45,36 @@ Capital cost inputs come from NREL's *Cost Projections for Utility-Scale Battery
 does not clear an 8 % real hurdle. Revenue certainty (capacity/ancillary contracts, spreads) matters more than
 efficiency or availability, and capex is the main lever on LCOS. Change `config/assumptions.yaml` to test your own case.
 
+### Augmentation and overbuild strategy (degradation-aware)
+
+48 strategies = day-1 overbuild (0, 5, 10, 15, 20, 30 % extra energy; usable energy capped at nameplate) ×
+augmentation interval (never, or every 2–8 years, topping back up to the design level), each priced with the same
+cash-flow/LCOS model (overbuild at build-year NREL energy cost, augmentation on the NREL Mid curve for its calendar
+year). Two capacity-revenue rules: a fixed $/kW-yr payment (base case) and one scaled by usable energy, as with
+duration-based capacity accreditation (`capacity_credit_tracks_soh`, an ILLUSTRATIVE rule).
+Results: `results/augmentation_strategies.csv`, `results/augmentation_robustness.csv`.
+
+| Capacity payment | Base case (no overbuild, augment yrs 5 & 10) | Highest NPV | Lowest LCOS |
+|---|---|---|---|
+| Fixed $/kW-yr | NPV −10.08 M$, LCOS 205.53 | **never augment: −9.27 M$** (LCOS 212.14) | augment every 2 y: 203.72 $/MWh (NPV −10.58 M$) |
+| Scaled by usable energy | NPV −12.24 M$, LCOS 205.53 | **augment every 2 y: −11.46 M$** (LCOS 203.72) | same |
+
+* **LCOS and NPV disagree.** With a fixed capacity payment the strategy with the lowest LCOS is not the most valuable:
+  compared with the base case, skipping augmentation raises LCOS by 3 % but adds 0.81 M$ of NPV, because the extra arbitrage throughput from
+  augmenting is worth less than the augmentation spend at these (synthetic) spreads.
+* **The answer flips with how capacity is paid.** If the capacity payment follows usable energy, not augmenting is the
+  worst option among no-overbuild strategies (−14.97 M$) and frequent small top-ups win.
+* **Overbuild only pays a little, and only when capacity tracks usable energy**: 5 % overbuild + augment every 5 y is
+  −11.59 M$ there (vs −12.24 M$ base), but every overbuild loses NPV under the fixed payment.
+* **Robustness (1,000 Monte Carlo draws, same distributions and seed, every strategy on every draw):** with the fixed
+  payment "never augment" has the highest NPV in 89.2 % of draws (mean regret 0.06 M$); with the energy-linked
+  payment "augment every 2 y" is best in 53.6 % of draws (mean regret 0.08 M$) and "augment every 3 y" in 21.0 %.
+  The base-case schedule (every 5 y) is almost never best (0.5 % / 0.0 %), with mean regret 1.12 / 0.76 M$.
+* Caveat: augmentation is priced at the bare NREL energy-cost component (no extra integration or outage cost), which
+  flatters augmentation, so the "never augment" result under a fixed payment is if anything understated.
+
+![Augmentation strategies](figures/augmentation_strategies.png)
+
 ### Figures
 
 **LCOS breakdown (waterfall)**
@@ -76,7 +107,9 @@ trajectory (Table 2, 2026: Low 0.77 / Mid 0.92 / High 1.10, relative to 2024 = 1
 ### Physics & degradation
 * Annual discharged energy `E_dis,t = P · D · cycles · availability · SOH_t`, charged energy `E_ch,t = E_dis,t / η_RT`.
 * Usable energy fades linearly (`annual_fade`); at the end of years 5 and 10 the lost capacity is
-  **augmented** back to nameplate. Augmentation is priced at the NREL energy-cost component scaled by NREL's
+  **augmented** back to nameplate. Optional day-1 **overbuild** (`initial_overbuild`) installs extra energy that is
+  not usable above nameplate but delays the loss of usable energy (time-average usable SOH is integrated exactly
+  across the crossing); augmentation then tops back up to the design level. Augmentation is priced at the NREL energy-cost component scaled by NREL's
   Mid cost-reduction curve for that calendar year (2031: 0.81, 2036: 0.71), keeping the build-year cost ratio.
 
 ### LCOS
@@ -126,6 +159,8 @@ Source tags: **NREL2025** = verified in the cited report · **ILLUSTRATIVE** = a
 | Average discharge price | 115 $/MWh | **SYNTHETIC** |
 | Average charging price | 35 $/MWh | **SYNTHETIC** |
 | Capacity / ancillary revenue | 50 $/kW-yr | **SYNTHETIC** |
+| Capacity payment rule | fixed per kW (strategy study also tests "scaled by usable energy") | ILLUSTRATIVE |
+| Day-1 overbuild | 0 % (strategy study: 0–30 %) | ILLUSTRATIVE |
 | Discount rate (real, pre-tax) | 7 % | ILLUSTRATIVE |
 | Hurdle IRR (real, pre-tax) | 8 % | ILLUSTRATIVE |
 | Residual value / decommissioning | 0 | ILLUSTRATIVE |
@@ -152,13 +187,13 @@ Monte Carlo and tornado ranges are listed in [`config/assumptions.yaml`](config/
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python run_all.py                 # full run (~15 s): figures/ + results/
-python run_all.py --draws 1000    # quicker Monte Carlo
-pytest -q                         # 9 unit tests
+python run_all.py                 # full run (~100 s): figures/ + results/
+python run_all.py --draws 1000 --aug-draws 0   # quick run (skips the strategy robustness Monte Carlo)
+pytest -q                         # 16 unit tests
 ```
 
 Outputs: `results/summary.json` (all headline numbers), `results/base_case_cashflows.csv`, `results/tornado.csv`,
-`results/mc_rank_correlation_irr.csv`, `results/run_log.txt`, and `results/monte_carlo_draws.csv.gz` (regenerated, git-ignored).
+`results/mc_rank_correlation_irr.csv`, `results/augmentation_strategies.csv`, `results/augmentation_robustness.csv`, `results/run_log.txt`, and `results/monte_carlo_draws.csv.gz` (regenerated, git-ignored).
 
 ## Repository layout
 
@@ -166,7 +201,8 @@ Outputs: `results/summary.json` (all headline numbers), `results/base_case_cashf
 config/assumptions.yaml    # every assumption, tagged by source
 src/bess_tea/
   config.py                # YAML -> flat parameter dict
-  physics.py               # throughput, SOH, augmentation schedule
+  physics.py               # throughput, SOH, overbuild, augmentation schedule
+  augmentation.py          # overbuild x augmentation-interval strategy grid + Monte Carlo robustness
   cashflow.py              # capex, annual cash flows, NPV / IRR / payback
   lcos.py                  # LCOS + additive component breakdown
   sensitivity.py           # tornado
@@ -181,8 +217,10 @@ tests/test_model.py        # pytest checks (capex formula, IRR, LCOS additivity,
 * Revenues are synthetic and constant in real terms; there's no dispatch optimisation, price-shape or cannibalisation
   model, and arbitrage and capacity revenues are simply added together (no co-optimisation or stacking constraints).
 * Pre-tax, unlevered and real: no tax, depreciation, ITC/incentives, debt, inflation or working capital.
-* Degradation is linear in usable energy with fixed augmentation years. It ignores calendar vs. cycle ageing,
-  depth-of-discharge effects and RTE drift.
+* Degradation is linear in installed energy, and augmented capacity fades at the same rate as the original. It
+  ignores calendar vs. cycle ageing, depth-of-discharge effects, RTE drift, augmentation outages and integration costs.
+* The "capacity payment scaled by usable energy" rule is a simple illustration of duration-based accreditation, not
+  any specific market's rules.
 * Monte Carlo inputs are sampled independently, so correlations (e.g. between spreads and capacity prices) are ignored.
 * Capex is a national-average NREL benchmark for 4-hour systems, adapted to 2 hours. Site, grid-connection,
   interconnection and regional costs aren't modelled.

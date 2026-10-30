@@ -8,8 +8,8 @@ from .physics import energy_profile
 
 
 def capex_usd(p: dict) -> float:
-    """Overnight capex: (energy $/kWh * duration + power $/kW) * kW * multiplier."""
-    per_kw = p["energy_cost_per_kwh"] * p["duration_h"] + p["power_cost_per_kw"]
+    """Overnight capex: (energy $/kWh * duration * (1 + overbuild) + power $/kW) * kW * multiplier."""
+    per_kw = p["energy_cost_per_kwh"] * p["duration_h"] * (1.0 + p.get("initial_overbuild", 0.0)) + p["power_cost_per_kw"]
     return per_kw * p["cost_multiplier"] * p["power_mw"] * 1_000.0
 
 
@@ -41,6 +41,10 @@ def build_cashflows(p: dict) -> pd.DataFrame:
 
     arb_rev = dis * p["discharge_price_per_mwh"]
     cap_rev = np.r_[0.0, np.full(n, p["capacity_revenue_per_kw_yr"] * p["power_mw"] * 1_000.0)]
+    if p.get("capacity_credit_tracks_soh", False):
+        # duration-based accreditation: a battery that can no longer hold full power for the rated
+        # duration is credited pro rata (ILLUSTRATIVE rule; default off)
+        cap_rev[1:] *= np.minimum(prof["soh"], 1.0)
     charge_cost = chg * p["charge_price_per_mwh"]
     fom = np.r_[0.0, np.full(n, p["fixed_om_pct_capex"] * capex)]
     vom = dis * p["variable_om_per_mwh"]
