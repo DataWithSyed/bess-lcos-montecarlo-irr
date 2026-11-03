@@ -2,8 +2,9 @@
 
 A compact, transparent **techno-economic toolkit for a utility-scale battery energy storage system (BESS)**:
 Levelized Cost of Storage (LCOS) with a component breakdown, an annual project cash-flow model (NPV, IRR, payback),
-one-at-a-time tornado sensitivity, a 10,000-draw Monte Carlo over the uncertain inputs, and an
-augmentation / overbuild strategy study that asks how a fading battery should be topped up.
+one-at-a-time tornado sensitivity, a 10,000-draw Monte Carlo over the uncertain inputs, an
+augmentation / overbuild strategy study that asks how a fading battery should be topped up, and a
+**project-finance layer** (merchant vs tolling revenue, DSCR-sculpted senior debt, levered equity IRR).
 
 Case study: **100 MW / 200 MWh (2-hour) lithium-ion BESS**, 15-year life, real 2024 US$, pre-tax, unlevered.
 Capital cost inputs come from NREL's *Cost Projections for Utility-Scale Battery Storage: 2025 Update*.
@@ -74,6 +75,47 @@ Results: `results/augmentation_strategies.csv`, `results/augmentation_robustness
   flatters augmentation, so the "never augment" result under a fixed payment is if anything understated.
 
 ![Augmentation strategies](figures/augmentation_strategies.png)
+
+### Project finance: merchant vs tolling, DSCR-sculpted debt
+
+This layer asks whether contracting the battery out and gearing it up rescues the base case.
+Two revenue structures are run through the same cash-flow model (real, pre-tax, `src/bess_tea/financing.py`):
+
+* **Merchant.** The project keeps arbitrage and capacity revenue (as above).
+* **Tolled.** An offtaker pays a fixed toll for 10 years, takes all market revenue and pays for charging.
+  The toll is 85 % of the base-case year-1 merchant gross margin (101.8 $/kW-yr), i.e. **86.5 $/kW-yr**, and
+  scales with usable energy. After year 10 the asset is merchant again.
+
+Senior debt is **sculpted**: DS_t = CFADS_t / DSCR target on the base case, debt = PV(DS) at 4 % real, capped
+by maximum gearing. Lender terms (ILLUSTRATIVE): merchant 1.75x, 7 years, ≤ 50 %; tolled 1.25x, 10 years, ≤ 80 %.
+Augmentation is pre-funded through a maintenance reserve account (equal contributions since the last top-up),
+so lumpy spends do not break DSCRs. The Monte Carlo (10,000 draws, seed 42) holds debt and toll fixed at
+financial close and redraws only operating risks: prices, capacity revenue, fade, availability, O&M and RTE.
+Capex and the discount rate are fixed at close.
+
+| Base case | Debt | Gearing | Project IRR | Equity IRR | MC equity IRR P10 / P50 / P90 | P(min DSCR < 1.0x) | P(equity IRR > 10 %) |
+|---|---|---|---|---|---|---|---|
+| Merchant | 25.0 M$ | 31.8 % | 4.79 % | **4.95 %** | −1.04 / 3.68 / 7.80 % | 4.4 % | 2.1 % |
+| Tolled (86.5 $/kW-yr, 10 y) | 35.9 M$ | 45.7 % | 2.31 % | **1.60 %** | −1.92 / 0.70 / 2.86 % | 9.7 % | 0.0 % |
+
+* **Leverage barely helps, because the project IRR is about the same as the cost of debt.** Merchant project
+  IRR is 4.79 % against a 4 % real debt rate, so 32 % gearing only adds 0.16 pp to equity. When tolled, the
+  project IRR (2.31 %) is *below* the debt rate, so leverage makes equity worse (1.60 %).
+* **Tolling halves the risk but costs return.** The P10–P90 equity IRR range narrows from 8.8 pp to 4.8 pp,
+  and the toll allows 43 % more debt (35.9 vs 25.0 M$). But a toll at 85 % of merchant margin hands most
+  of the value to the offtaker.
+* **Break-even tolls:** 0 % equity IRR needs a toll of 74.8 % of merchant margin (76.1 $/kW-yr). A 10 % real
+  equity IRR needs **117.3 % (119.4 $/kW-yr)**, i.e. more than the merchant margin itself. With these synthetic
+  revenues and NREL 2026 mid-case capex, no contract structure makes the asset financeable at a 10 % equity hurdle.
+  Capex or revenue has to move first.
+* **The tolled case breaches 1.0x DSCR more often (9.7 % vs 4.4 %).** Its 1.25x cushion covers only cost and
+  fade risk, and those distributions are skewed to the downside. The merchant 1.75x cushion is much larger.
+* The project IRRs here (4.79 % merchant) differ slightly from the unlevered headline (4.89 %) only because the
+  reserve account moves augmentation spend earlier. Total spend is identical.
+
+Results: `results/financing_debt_schedules.csv`, `results/financing_toll_sweep.csv`, `summary.json → project_finance`.
+
+![Project finance](figures/project_finance.png)
 
 ### Figures
 
@@ -162,6 +204,11 @@ Source tags: **NREL2025** = verified in the cited report · **ILLUSTRATIVE** = a
 | Capacity payment rule | fixed per kW (strategy study also tests "scaled by usable energy") | ILLUSTRATIVE |
 | Day-1 overbuild | 0 % (strategy study: 0–30 %) | ILLUSTRATIVE |
 | Discount rate (real, pre-tax) | 7 % | ILLUSTRATIVE |
+| Senior debt rate (real, all-in) | 4 % | ILLUSTRATIVE |
+| Merchant debt: DSCR / tenor / max gearing | 1.75x / 7 y / 50 % | ILLUSTRATIVE |
+| Tolled debt: DSCR / tenor / max gearing | 1.25x / 10 y / 80 % | ILLUSTRATIVE |
+| Toll level / term | 85 % of base merchant margin (86.5 $/kW-yr) / 10 y | ILLUSTRATIVE |
+| Equity hurdle (real, pre-tax) | 10 % | ILLUSTRATIVE |
 | Hurdle IRR (real, pre-tax) | 8 % | ILLUSTRATIVE |
 | Residual value / decommissioning | 0 | ILLUSTRATIVE |
 
@@ -187,13 +234,13 @@ Monte Carlo and tornado ranges are listed in [`config/assumptions.yaml`](config/
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python run_all.py                 # full run (~100 s): figures/ + results/
-python run_all.py --draws 1000 --aug-draws 0   # quick run (skips the strategy robustness Monte Carlo)
-pytest -q                         # 16 unit tests
+python run_all.py                 # full run (~2 min): figures/ + results/
+python run_all.py --draws 1000 --aug-draws 0 --fin-draws 1000   # quick run (skips the strategy robustness Monte Carlo)
+pytest -q                         # 23 unit tests
 ```
 
 Outputs: `results/summary.json` (all headline numbers), `results/base_case_cashflows.csv`, `results/tornado.csv`,
-`results/mc_rank_correlation_irr.csv`, `results/augmentation_strategies.csv`, `results/augmentation_robustness.csv`, `results/run_log.txt`, and `results/monte_carlo_draws.csv.gz` (regenerated, git-ignored).
+`results/mc_rank_correlation_irr.csv`, `results/augmentation_strategies.csv`, `results/augmentation_robustness.csv`, `results/financing_debt_schedules.csv`, `results/financing_toll_sweep.csv`, `results/run_log.txt`, and `results/monte_carlo_draws.csv.gz` (regenerated, git-ignored).
 
 ## Repository layout
 
@@ -203,6 +250,7 @@ src/bess_tea/
   config.py                # YAML -> flat parameter dict
   physics.py               # throughput, SOH, overbuild, augmentation schedule
   augmentation.py          # overbuild x augmentation-interval strategy grid + Monte Carlo robustness
+  financing.py             # merchant vs tolled CFADS, augmentation reserve, DSCR-sculpted debt, equity IRR
   cashflow.py              # capex, annual cash flows, NPV / IRR / payback
   lcos.py                  # LCOS + additive component breakdown
   sensitivity.py           # tornado
@@ -216,7 +264,9 @@ tests/test_model.py        # pytest checks (capex formula, IRR, LCOS additivity,
 
 * Revenues are synthetic and constant in real terms; there's no dispatch optimisation, price-shape or cannibalisation
   model, and arbitrage and capacity revenues are simply added together (no co-optimisation or stacking constraints).
-* Pre-tax, unlevered and real: no tax, depreciation, ITC/incentives, debt, inflation or working capital.
+* Pre-tax and real: no tax, depreciation, ITC/incentives, inflation or working capital. The headline metrics are unlevered.
+  The financing layer uses a single real debt rate with no fees, DSRA, cash sweeps or covenant lock-ups. Its lender
+  terms and toll level are ILLUSTRATIVE, not market quotes.
 * Degradation is linear in installed energy, and augmented capacity fades at the same rate as the original. It
   ignores calendar vs. cycle ageing, depth-of-discharge effects, RTE drift, augmentation outages and integration costs.
 * The "capacity payment scaled by usable energy" rule is a simple illustration of duration-based accreditation, not

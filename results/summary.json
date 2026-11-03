@@ -241,5 +241,75 @@
         "mean_regret_musd": 0.7615946907561383
       }
     }
+  },
+  "project_finance": {
+    "terms": {
+      "debt_rate_real": 0.04,
+      "equity_hurdle_irr": 0.1,
+      "toll_term_years": 10,
+      "toll_pct_of_merchant_margin": 0.85,
+      "merchant_dscr_target": 1.75,
+      "merchant_tenor_years": 7,
+      "merchant_max_gearing": 0.5,
+      "tolled_dscr_target": 1.25,
+      "tolled_tenor_years": 10,
+      "tolled_max_gearing": 0.8,
+      "mc_draws": 10000
+    },
+    "merchant_margin_usd_per_kw_yr": 101.75169676470588,
+    "base_case": {
+      "merchant": {
+        "structure": "merchant",
+        "toll_usd_per_kw_yr": null,
+        "capex_usd": 78568000.0,
+        "debt_usd": 25012375.532728374,
+        "gearing": 0.3183532167387279,
+        "gearing_capped": false,
+        "min_dscr": 1.7499999999999998,
+        "avg_dscr": 1.75,
+        "project_irr": 0.047944163281936195,
+        "equity_irr": 0.049532469667028636,
+        "equity_usd": 53555624.467271626
+      },
+      "tolled": {
+        "structure": "tolled",
+        "toll_usd_per_kw_yr": 86.48894225,
+        "capex_usd": 78568000.0,
+        "debt_usd": 35872597.98393099,
+        "gearing": 0.4565802614796226,
+        "gearing_capped": false,
+        "min_dscr": 1.25,
+        "avg_dscr": 1.25,
+        "project_irr": 0.0231456823530607,
+        "equity_irr": 0.01601954604731873,
+        "equity_usd": 42695402.01606901
+      }
+    },
+    "monte_carlo": {
+      "merchant": {
+        "equity_irr_p10": -0.01044103609167006,
+        "equity_irr_p50": 0.03682718611690716,
+        "equity_irr_p90": 0.07800745633407902,
+        "prob_equity_irr_above_hurdle": 0.0213,
+        "n_equity_irr_undefined": 0,
+        "prob_min_dscr_below_1": 0.0443,
+        "prob_min_dscr_below_1_10": 0.078,
+        "min_dscr_p10": 1.1470238579877587
+      },
+      "tolled": {
+        "equity_irr_p10": -0.01918979333860563,
+        "equity_irr_p50": 0.007037976060076279,
+        "equity_irr_p90": 0.02861889247865235,
+        "prob_equity_irr_above_hurdle": 0.0,
+        "n_equity_irr_undefined": 0,
+        "prob_min_dscr_below_1": 0.0965,
+        "prob_min_dscr_below_1_10": 0.2713,
+        "min_dscr_p10": 1.0030795302741184
+      },
+      "n_draws": 10000,
+      "seed": 42
+    },
+    "breakeven_toll_pct_for_equity_hurdle": 1.173224392960912,
+    "breakeven_toll_pct_for_zero_equity_irr": 0.7483290538021403
   }
 }

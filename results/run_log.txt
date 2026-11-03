@@ -20,3 +20,6 @@ Augmentation study [fixed capacity payment]: base (OB 0%/5 y) NPV -10.08 M$, LCO
    MC most often best: [('OB 0% / no augmentation', 0.892, 0.055), ('OB 0% / augment every 3 y', 0.102, 1.372), ('OB 0% / augment every 5 y', 0.005, 1.115)] | base-case strategy best in 0.005 regret 1.115 M$
 Augmentation study [soh_linked capacity payment]: base (OB 0%/5 y) NPV -12.24 M$, LCOS 205.53 | best NPV: OB 0% / augment every 2 y -11.46 M$ (LCOS 203.72) | lowest LCOS: OB 0% / augment every 2 y 203.72 (NPV -11.46 M$)
    MC most often best: [('OB 0% / augment every 2 y', 0.536, 0.084), ('OB 5% / augment every 3 y', 0.229, 0.449), ('OB 0% / augment every 3 y', 0.21, 0.195)] | base-case strategy best in 0.0 regret 0.762 M$
+Finance [merchant]: debt 25.01 M$ (gearing 31.8%), project IRR 4.79%, equity IRR 4.95% | MC equity IRR P10/P50/P90 -1.04/3.68/7.80%, P(min DSCR<1.0) 4.4%, P(eq IRR>hurdle) 2.1%
+Finance [tolled]: debt 35.87 M$ (gearing 45.7%), project IRR 2.31%, equity IRR 1.60% | MC equity IRR P10/P50/P90 -1.92/0.70/2.86%, P(min DSCR<1.0) 9.7%, P(eq IRR>hurdle) 0.0%
+   toll for 10% equity IRR: 117.3% of merchant margin (119.4 $/kW-yr); for 0%: 74.8%
