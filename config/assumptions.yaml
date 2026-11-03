@@ -66,6 +66,21 @@ finance:
   hurdle_irr: 0.08                # ILLUSTRATIVE real, pre-tax hurdle
   residual_value_pct_capex: 0.0   # ILLUSTRATIVE: no salvage, no decommissioning cost
 
+project_finance:                 # src/bess_tea/financing.py - all ILLUSTRATIVE, real pre-tax basis
+  debt_rate_real: 0.04            # ILLUSTRATIVE all-in real cost of senior debt (no fees)
+  equity_hurdle_irr: 0.10         # ILLUSTRATIVE real, pre-tax levered equity hurdle
+  toll_term_years: 10             # ILLUSTRATIVE tolling agreement length; merchant tail afterwards
+  toll_pct_of_merchant_margin: 0.85  # ILLUSTRATIVE toll = 85 % of base-case year-1 merchant gross margin ($/kW-yr)
+  toll_sweep_pcts: [0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]
+  # Lender terms. Typical market ranges are wider for merchant risk; the values below are ILLUSTRATIVE.
+  merchant_dscr_target: 1.75      # sculpting DSCR on base-case CFADS
+  merchant_tenor_years: 7
+  merchant_max_gearing: 0.50
+  tolled_dscr_target: 1.25
+  tolled_tenor_years: 10          # debt matures with the toll
+  tolled_max_gearing: 0.80
+  mc_draws: 10000                 # Monte Carlo draws (same distributions and seed) holding debt and toll fixed
+
 monte_carlo:
   n_draws: 10000
   seed: 42

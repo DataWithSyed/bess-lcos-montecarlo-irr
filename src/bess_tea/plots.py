@@ -190,3 +190,49 @@ def augmentation_heatmaps(grid: pd.DataFrame, path: Path) -> None:
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
+
+
+def financing_plot(cases: dict, mc: pd.DataFrame, sweep: pd.DataFrame, equity_hurdle: float,
+                   breakeven_pct: float, path: Path) -> None:
+    """Merchant vs tolled: sculpted debt service, Monte Carlo equity IRR, toll sweep."""
+    fig, axes = plt.subplots(1, 3, figsize=(17, 4.8))
+    ax = axes[0]
+    yrs = np.arange(len(cases["merchant"]["cfads"]))
+    for s, c in (("merchant", "tab:blue"), ("tolled", "tab:orange")):
+        bc = cases[s]
+        ax.plot(yrs[1:], bc["cfads"][1:] / 1e6, color=c, marker="o", ms=3, label=f"{s} CFADS")
+        ax.bar(yrs[1:] + (-0.2 if s == "merchant" else 0.2), bc["debt_service"][1:] / 1e6, width=0.4, color=c,
+               alpha=0.45, label=f"{s} debt service (DSCR {bc['min_dscr']:.2f}x)")
+    ax.set_xlabel("Operating year")
+    ax.set_ylabel("M$ per year (real)")
+    ax.set_title("CFADS and sculpted debt service (base case)", fontsize=10)
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3)
+    ax = axes[1]
+    bins = np.linspace(-0.08, 0.16, 49)
+    for s, c in (("merchant", "tab:blue"), ("tolled", "tab:orange")):
+        v = mc[f"{s}_equity_irr"].dropna() * 100
+        ax.hist(v.clip(bins[0] * 100, bins[-1] * 100), bins=bins * 100, alpha=0.55, color=c,
+                label=f"{s}: P10/P50/P90 {np.percentile(v, 10):.1f}/{np.percentile(v, 50):.1f}/{np.percentile(v, 90):.1f}%")
+    ax.axvline(equity_hurdle * 100, color="k", ls="--", lw=1, label=f"equity hurdle {equity_hurdle*100:.0f}%")
+    ax.set_xlabel("Levered equity IRR (real, pre-tax), %")
+    ax.set_ylabel("Monte Carlo draws")
+    ax.set_title(f"Equity IRR, debt fixed at close (n = {len(mc):,})", fontsize=10)
+    ax.legend(fontsize=7)
+    ax = axes[2]
+    ax.plot(sweep.toll_usd_per_kw_yr, sweep.equity_irr * 100, marker="o", label="equity IRR (tolled)")
+    ax.plot(sweep.toll_usd_per_kw_yr, sweep.project_irr * 100, marker="s", label="project IRR (tolled)")
+    ax.axhline(cases["merchant"]["equity_irr"] * 100, color="tab:blue", ls=":", label="merchant equity IRR")
+    ax.axhline(equity_hurdle * 100, color="k", ls="--", lw=1, label="equity hurdle")
+    ax.set_xlabel("Toll, $/kW-yr (70-100 % of base merchant margin)")
+    ax.set_ylabel("IRR, %")
+    t = f"Toll sweep (10 % equity IRR needs {breakeven_pct*100:.0f} % of merchant margin)" if breakeven_pct == breakeven_pct \
+        else "Toll sweep"
+    ax.set_title(t, fontsize=10)
+    ax.legend(fontsize=7)
+    ax.grid(alpha=0.3)
+    fig.suptitle("Project finance: merchant vs 10-year toll, DSCR-sculpted senior debt (ILLUSTRATIVE terms, synthetic revenues)",
+                 fontsize=10)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)

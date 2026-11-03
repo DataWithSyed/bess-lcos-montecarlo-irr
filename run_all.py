@@ -19,6 +19,8 @@ from bess_tea import plots  # noqa: E402
 from bess_tea.augmentation import evaluate_grid, robustness, strategy_grid  # noqa: E402
 from bess_tea.cashflow import build_cashflows, project_metrics  # noqa: E402
 from bess_tea.config import DEFAULT_CONFIG, base_params, load_config  # noqa: E402
+from bess_tea.financing import (STRUCTURES, breakeven_toll_pct, finance_case, finance_monte_carlo,  # noqa: E402
+                                 merchant_margin_per_kw_yr, summarise_finance_mc, toll_sweep)
 from bess_tea.lcos import COMPONENTS, lcos_breakdown  # noqa: E402
 from bess_tea.montecarlo import rank_correlations, run_monte_carlo, summarise  # noqa: E402
 from bess_tea.sensitivity import tornado  # noqa: E402
@@ -28,6 +30,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=str(DEFAULT_CONFIG))
     ap.add_argument("--draws", type=int, default=None, help="override Monte Carlo draws")
+    ap.add_argument("--fin-draws", type=int, default=None, help="override project-finance Monte Carlo draws")
     ap.add_argument("--aug-draws", type=int, default=None, help="override augmentation robustness draws (0 = skip)")
     args = ap.parse_args()
 
@@ -92,12 +95,39 @@ def main() -> None:
             br = rob[(rob.capacity_rule == k) & (rob.strategy == "OB 0% / augment every 5 y")].iloc[0]
             aug_summary[k]["mc_base_case_strategy"] = {"share_best_npv": br.share_best_npv, "mean_regret_musd": br.mean_regret_musd}
 
+    # 4b) project finance: merchant vs tolled, DSCR-sculpted debt, Monte Carlo with debt fixed at close
+    fcfg = cfg["project_finance"]
+    fin = {s: finance_case(p, fcfg, s) for s in STRUCTURES}
+    n_fin = args.fin_draws or fcfg["mc_draws"]
+    fin_mc = finance_monte_carlo(p, fcfg, mc_cfg["distributions"], n_fin, mc_cfg["seed"], fin)
+    fin_mc_summ = summarise_finance_mc(fin_mc, fcfg["equity_hurdle_irr"])
+    sweep = toll_sweep(p, fcfg, fcfg["toll_sweep_pcts"])
+    sweep.round(5).to_csv(res_dir / "financing_toll_sweep.csv", index=False)
+    be_pct = breakeven_toll_pct(p, fcfg, fcfg["equity_hurdle_irr"])
+    be_zero = breakeven_toll_pct(p, fcfg, 0.0)
+    fin_rows = []
+    for s in STRUCTURES:
+        bc = fin[s]
+        sched = bc["schedule"].assign(cfads=bc["cfads"], debt_service=bc["debt_service"], structure=s)
+        fin_rows.append(sched)
+    pd.concat(fin_rows).round(2).to_csv(res_dir / "financing_debt_schedules.csv", index=False)
+    fin_summary = {
+        "terms": {k: v for k, v in fcfg.items() if k != "toll_sweep_pcts"},
+        "merchant_margin_usd_per_kw_yr": merchant_margin_per_kw_yr(p),
+        "base_case": {s: {k: v for k, v in fin[s].items() if k not in ("debt_service", "schedule", "cfads")}
+                      for s in STRUCTURES},
+        "monte_carlo": {**fin_mc_summ, "n_draws": int(n_fin), "seed": mc_cfg["seed"]},
+        "breakeven_toll_pct_for_equity_hurdle": be_pct,
+        "breakeven_toll_pct_for_zero_equity_irr": be_zero,
+    }
+
     # 5) figures
     plots.lcos_waterfall(bd, fig_dir / "lcos_breakdown.png")
     plots.tornado_plot(tor, fig_dir / "tornado_irr_lcos.png", hurdle)
     plots.mc_irr_plot(res, summ, hurdle, m["irr"], fig_dir / "mc_irr_distribution.png")
     plots.mc_npv_lcos_plot(res, summ, fig_dir / "mc_npv_lcos_distribution.png")
     plots.cashflow_plot(cf, fig_dir / "base_case_cashflows.png")
+    plots.financing_plot(fin, fin_mc, sweep, fcfg["equity_hurdle_irr"], be_pct, fig_dir / "project_finance.png")
     plots.augmentation_heatmaps(aug, fig_dir / "augmentation_strategies.png")
 
     summary = {
@@ -127,6 +157,7 @@ def main() -> None:
         },
         "monte_carlo": {**summ, "seed": mc_cfg["seed"], "spearman_rho_vs_irr": rc.to_dict()},
         "augmentation_study": aug_summary,
+        "project_finance": fin_summary,
     }
     def _clean(o):  # NaN -> null so summary.json is strict JSON
         if isinstance(o, dict):
@@ -165,6 +196,14 @@ def main() -> None:
         if "mc_most_often_best" in v:
             print("   MC most often best:", [(d["strategy"], round(d["share_best_npv"], 3), round(d["mean_regret_musd"], 3)) for d in v["mc_most_often_best"]],
                   "| base-case strategy best in", round(v["mc_base_case_strategy"]["share_best_npv"], 3), "regret", round(v["mc_base_case_strategy"]["mean_regret_musd"], 3), "M$")
+    for s in STRUCTURES:
+        bc, mcs = fin[s], fin_mc_summ[s]
+        print(f"Finance [{s}]: debt {bc['debt_usd']/1e6:.2f} M$ (gearing {bc['gearing']*100:.1f}%), project IRR "
+              f"{bc['project_irr']*100:.2f}%, equity IRR {bc['equity_irr']*100:.2f}% | MC equity IRR P10/P50/P90 "
+              f"{mcs['equity_irr_p10']*100:.2f}/{mcs['equity_irr_p50']*100:.2f}/{mcs['equity_irr_p90']*100:.2f}%, "
+              f"P(min DSCR<1.0) {mcs['prob_min_dscr_below_1']*100:.1f}%, P(eq IRR>hurdle) {mcs['prob_equity_irr_above_hurdle']*100:.1f}%")
+    print(f"   toll for {fcfg['equity_hurdle_irr']*100:.0f}% equity IRR: {be_pct*100:.1f}% of merchant margin "
+          f"({be_pct*merchant_margin_per_kw_yr(p):.1f} $/kW-yr); for 0%: {be_zero*100:.1f}%")
 
 
 if __name__ == "__main__":

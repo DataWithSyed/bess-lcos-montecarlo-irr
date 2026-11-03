@@ -129,3 +129,66 @@ def test_robustness_shares_sum_to_one(p):
     rob = robustness(p, st, cfg["monte_carlo"]["distributions"], 20, 1)
     assert rob["share_best_npv"].sum() == pytest.approx(1.0)
     assert (rob["mean_regret_musd"] >= 0).all()
+
+
+# ---------------------------------------------------------------- project finance layer
+from bess_tea.financing import (breakeven_toll_pct, debt_schedule, finance_case,  # noqa: E402
+                                merchant_margin_per_kw_yr, operating_cashflows, reserve_contributions, size_debt)
+
+
+@pytest.fixture
+def f():
+    return load_config()["project_finance"]
+
+
+def test_reserve_contributions_preserve_total_and_smooth():
+    aug = np.array([0.0, 0, 0, 0, 0, -50.0, 0, 0, 0, 0, -30.0, 0, 0])
+    r = reserve_contributions(aug)
+    assert r.sum() == pytest.approx(aug.sum())
+    np.testing.assert_allclose(r[1:6], -10.0)
+    np.testing.assert_allclose(r[6:11], -6.0)
+    assert np.all(r[11:] == 0) and r[0] == 0
+
+
+def test_sculpted_debt_hits_target_dscr_and_amortises():
+    cfads = np.r_[0.0, np.linspace(10, 6, 12)]
+    debt, ds = size_debt(cfads, 1.4, 8, 0.05, max_debt=1e9)
+    np.testing.assert_allclose(cfads[1:9] / ds[1:9], 1.4)
+    assert np.all(ds[9:] == 0)
+    sched = debt_schedule(debt, ds, 0.05)
+    assert abs(sched.closing_balance.iloc[-1]) < 1e-6 * debt
+
+
+def test_gearing_cap_scales_debt_service_pro_rata():
+    cfads = np.r_[0.0, np.full(10, 10.0)]
+    debt, ds = size_debt(cfads, 1.2, 10, 0.04, max_debt=20.0)
+    assert debt == pytest.approx(20.0)
+    assert np.allclose(ds[1:], ds[1])          # profile kept (flat CFADS -> flat DS)
+    assert abs(debt_schedule(debt, ds, 0.04).closing_balance.iloc[-1]) < 1e-9
+
+
+def test_toll_insulates_term_cfads_from_market_prices(p, f):
+    toll = 80.0
+    a = operating_cashflows(p, "tolled", toll, 10)["cfads"].to_numpy()
+    b = operating_cashflows(dict(p, discharge_price_per_mwh=60.0), "tolled", toll, 10)["cfads"].to_numpy()
+    np.testing.assert_allclose(a[1:11], b[1:11])
+    assert np.all(b[11:] < a[11:])             # merchant tail still exposed
+
+
+def test_zero_gearing_equity_equals_project_irr(p, f):
+    g = dict(f, merchant_max_gearing=0.0)
+    c = finance_case(p, g, "merchant")
+    assert c["debt_usd"] == 0.0
+    assert c["equity_irr"] == pytest.approx(c["project_irr"], abs=1e-7)
+
+
+def test_equity_irr_increases_with_toll(p, f):
+    m = merchant_margin_per_kw_yr(p)
+    irrs = [finance_case(p, f, "tolled", k * m)["equity_irr"] for k in (0.8, 0.9, 1.0, 1.1)]
+    assert all(np.diff(irrs) > 0)
+
+
+def test_breakeven_toll_hits_target(p, f):
+    pct = breakeven_toll_pct(p, f, 0.10)
+    c = finance_case(p, f, "tolled", pct * merchant_margin_per_kw_yr(p))
+    assert c["equity_irr"] == pytest.approx(0.10, abs=1e-6)
