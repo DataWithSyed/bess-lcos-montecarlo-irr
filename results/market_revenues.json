@@ -1,0 +1,58 @@
+{
+  "window": "2025-11-01 to 2026-11-01 Europe/Berlin (exclusive end)",
+  "n_hours": 8760,
+  "n_days": 365,
+  "n_days_cycled": 365,
+  "share_days_cycled": 1.0,
+  "da_mean_eur_mwh": 111.26242043378996,
+  "da_min_eur_mwh": -499.0,
+  "da_max_eur_mwh": 697.308,
+  "ecb_usd_per_eur_unweighted_mean": 1.1582466407235807,
+  "discharged_mwh": 73000.0,
+  "charged_mwh": 85882.35294117648,
+  "cycles_raw": 365.0,
+  "cycles_per_year_for_tea": 365.0,
+  "vwap_discharge_usd_mwh": 210.20488432162898,
+  "vwap_charge_usd_mwh": 52.35135143960096,
+  "spread_usd_mwh": 157.85353288202802,
+  "arbitrage_net_usd": 10848899.31419554,
+  "arbitrage_net_usd_per_kw_yr": 108.4889931419554,
+  "synthetic_discharge_usd_mwh": 115.0,
+  "synthetic_charge_usd_mwh": 35.0,
+  "synthetic_spread_usd_mwh": 80.0,
+  "synthetic_year1_discharged_mwh": 70810.0,
+  "tea_market_with_synthetic_capacity": {
+    "capex_usd": 78568000.0,
+    "npv_usd": 35871563.33432811,
+    "irr": 0.13707929200259972,
+    "simple_payback_years": 6.290926858869213,
+    "discounted_payback_years": 8.430021339205949,
+    "lcos_usd_per_mwh": 225.93988655961772
+  },
+  "tea_market_arbitrage_only": {
+    "capex_usd": 78568000.0,
+    "npv_usd": -9668006.691217616,
+    "irr": 0.04974459277233109,
+    "simple_payback_years": 10.65812563619852,
+    "discounted_payback_years": NaN,
+    "lcos_usd_per_mwh": 225.93988655961772
+  },
+  "tea_synthetic_with_capacity": {
+    "capex_usd": 78568000.0,
+    "npv_usd": -10082355.103172522,
+    "irr": 0.04892975037219004,
+    "simple_payback_years": 10.715589158633763,
+    "discounted_payback_years": NaN,
+    "lcos_usd_per_mwh": 205.5265319247931
+  },
+  "tea_synthetic_arbitrage_only": {
+    "capex_usd": 78568000.0,
+    "npv_usd": -55621925.12871826,
+    "irr": -0.07924424647120759,
+    "simple_payback_years": NaN,
+    "discounted_payback_years": NaN,
+    "lcos_usd_per_mwh": 205.5265319247931
+  },
+  "capacity_revenue_note": "The 50 $/kW-yr capacity/ancillary payment is still SYNTHETIC and is unchanged in the 'with_synthetic_capacity' cases. Arbitrage-only cases set it to 0.",
+  "attribution": "Energy-Charts / SMARD DE-LU day-ahead prices, CC BY 4.0. ECB USD/EUR monthly averages (as used in epm-data-pipeline)."
+}

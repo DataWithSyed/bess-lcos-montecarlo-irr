@@ -8,7 +8,7 @@ augmentation / overbuild strategy study that asks how a fading battery should be
 
 Case study: **100 MW / 200 MWh (2-hour) lithium-ion BESS**, 15-year life, real 2024 US$, pre-tax, unlevered.
 Capital cost inputs come from NREL's *Cost Projections for Utility-Scale Battery Storage: 2025 Update*.
-**Revenue inputs are synthetic.** This is a method demo, not an investment case for a real project.
+Capacity / ancillary revenue is still **synthetic**. A measured Energy-Charts DE-LU day-ahead arbitrage path is compared with the synthetic 115/35 $/MWh case below. This remains a method study, not an investment case for a real project.
 
 ---
 
@@ -45,6 +45,36 @@ Capital cost inputs come from NREL's *Cost Projections for Utility-Scale Battery
 **Reading the result:** with these (synthetic) revenues, a 2-hour merchant battery at NREL's 2026 mid-case capex
 does not clear an 8 % real hurdle. Revenue certainty (capacity/ancillary contracts, spreads) matters more than
 efficiency or availability, and capex is the main lever on LCOS. Change `config/assumptions.yaml` to test your own case.
+
+### Energy-Charts DE-LU day-ahead arbitrage path (2026-11-12)
+
+The synthetic case uses constant 115 / 35 $/MWh discharge and charge prices (spread 80 $/MWh) and 365 cycles/year. This complement keeps that case unchanged and adds a **measured** path: Energy-Charts / SMARD DE-LU day-ahead hourly means, **2025-11-01 → 2026-10-31** (8,760 hours, Europe/Berlin, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), converted to USD with ECB monthly USD/EUR averages (period mean 1.158). Dispatch is daily perfect foresight, at most one cycle per day, 100 MW / 200 MWh, 85 % RTE: charge enough cheapest hours to cover \(E_\mathrm{dis}/\eta\) and discharge two full-power peak hours, only if the cycle is profitable. Fees, imbalance and grid charges are **not** included. The 15-year TEA still applies the 97 % availability haircut and fade, exactly as in the synthetic case. The 50 $/kW-yr capacity payment is **still SYNTHETIC** wherever it is used.
+
+![Daily DE-LU arbitrage net and realised spreads versus the synthetic 80 $/MWh spread](figures/market_da_arbitrage.png)
+
+| | Synthetic 115/35 | Energy-Charts DA path |
+|---|---:|---:|
+| Days cycled (of 365) | 365 (assumed) | **365 / 365** (every day profitable under these rules) |
+| Volume-weighted discharge price | 115 $/MWh | **210.20 $/MWh** |
+| Volume-weighted charge price | 35 $/MWh | **52.35 $/MWh** |
+| Spread | 80 $/MWh | **157.85 $/MWh** |
+| Historical-window arbitrage net | — | **10.85 M$** (108.5 $/kW-yr) |
+| LCOS | 205.53 $/MWh | **225.94 $/MWh** |
+| Unlevered IRR, **with** synthetic 50 $/kW-yr capacity | **4.89 %** | **13.71 %** |
+| NPV @ 7 % real, with synthetic capacity | −10.08 M$ | **+35.87 M$** |
+| Simple payback, with synthetic capacity | 10.72 y | 6.29 y |
+| Unlevered IRR, **arbitrage only** (capacity = 0) | −7.92 % | **4.97 %** |
+| NPV @ 7 %, arbitrage only | −55.62 M$ | −9.67 M$ |
+
+**Honest reading.** On this 12-month window the realised peak/trough spread is about **twice** the synthetic 80 $/MWh assumption, mainly because H2-2026 DE-LU prices include extremes (min −499, max 697.31 €/MWh; mean 111.26 €/MWh). That is why IRR with the *still-synthetic* capacity payment jumps from 4.89 % to 13.71 % and clears the 8 % hurdle. Two caveats matter more than the headline:
+
+* **Without the synthetic capacity payment, the market-path IRR is 4.97 %** — almost the same as the old all-in synthetic 4.89 % — and still misses the 8 % hurdle (NPV −9.67 M$). The day-ahead path replaces the assumed capacity income; it does not, on its own, make the 2026 mid-case capex asset financeable at 8 %.
+* LCOS **rises** (205.53 → 225.94 $/MWh) because the realised charging VWAP (52.35) is above the synthetic 35 $/MWh. IRR and LCOS move in opposite directions here because LCOS does not credit discharge revenue.
+* The window is a single realised year with daily perfect foresight and no trading fees. It is not a price-forward or a typical year, and contemporaneous ECB FX is used rather than a 2024 USD deflator.
+
+Run `python scripts/run_market_revenues.py` (no network required; the attributed panel is shipped). Results: `results/market_revenues.json`, `results/market_daily_dispatch.csv`.
+
+
 
 ### Augmentation and overbuild strategy (degradation-aware)
 
@@ -225,7 +255,7 @@ Monte Carlo and tornado ranges are listed in [`config/assumptions.yaml`](config/
   open-content licence; this repository only cites individual numeric values (with page/table references) and
   does not redistribute the report's text or figures. Values are for 4-hour, mainland-US systems in 2024$;
   extending them to a 2-hour system uses NREL's own energy/power split.
-* **Revenue and market inputs** are synthetic, not taken from any market dataset.
+* **Capacity / ancillary revenue** is still synthetic. The DE-LU day-ahead *arbitrage* comparison uses Energy-Charts / SMARD prices (CC BY 4.0) and ECB USD/EUR monthly averages; it does not include a measured capacity market or trading fees.
 
 ---
 
@@ -236,7 +266,8 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 python run_all.py                 # full run (~2 min): figures/ + results/
 python run_all.py --draws 1000 --aug-draws 0 --fin-draws 1000   # quick run (skips the strategy robustness Monte Carlo)
-pytest -q                         # 23 unit tests
+python scripts/run_market_revenues.py   # Energy-Charts DE-LU path vs synthetic revenues (no network)
+pytest -q                         # 28 unit tests
 ```
 
 Outputs: `results/summary.json` (all headline numbers), `results/base_case_cashflows.csv`, `results/tornado.csv`,
@@ -256,14 +287,19 @@ src/bess_tea/
   sensitivity.py           # tornado
   montecarlo.py            # sampling, simulation, percentiles, rank correlation
   plots.py                 # figures
-run_all.py                 # end-to-end pipeline
+  market.py                # Energy-Charts DE-LU day-ahead dispatch and TEA comparison
+run_all.py                 # end-to-end pipeline (synthetic revenues)
+scripts/run_market_revenues.py
 tests/test_model.py        # pytest checks (capex formula, IRR, LCOS additivity, ...)
+tests/test_market.py       # dispatch, FX, shipped-window, config isolation
 ```
 
 ## Limitations
 
-* Revenues are synthetic and constant in real terms; there's no dispatch optimisation, price-shape or cannibalisation
-  model, and arbitrage and capacity revenues are simply added together (no co-optimisation or stacking constraints).
+* Capacity / ancillary revenue remains synthetic and constant in real terms. The Energy-Charts path is a single
+  12-month DE-LU day-ahead window with daily perfect foresight, at most one cycle per day, and no fees, imbalance or
+  grid charges. EUR prices are converted at contemporaneous monthly ECB FX, not deflated to 2024$. Arbitrage and
+  capacity revenues are still just added together (no co-optimisation or stacking constraints).
 * Pre-tax and real: no tax, depreciation, ITC/incentives, inflation or working capital. The headline metrics are unlevered.
   The financing layer uses a single real debt rate with no fees, DSRA, cash sweeps or covenant lock-ups. Its lender
   terms and toll level are ILLUSTRATIVE, not market quotes.
