@@ -1,0 +1,211 @@
+{
+  "basis": "real 2024 US$: German HICP (Eurostat prc_hicp_minr, 2015=100) deflator to the 2024 mean, then 2024 mean ECB USD/EUR 1.0821",
+  "hicp_2024_mean": 128.9925,
+  "fx_2024_mean": 1.082054577373108,
+  "windows": [
+    "2018/19",
+    "2019/20",
+    "2020/21",
+    "2021/22",
+    "2022/23",
+    "2023/24",
+    "2024/25",
+    "2025/26"
+  ],
+  "reconcile_2025_26_nominal_fx": {
+    "net_usd_per_kw_yr": 108.4889931419554,
+    "irr_arb": 0.04974459277233109
+  },
+  "bootstrap": {
+    "perfect|all_8|arbitrage_only": {
+      "n_draws": 10000,
+      "irr_defined_share": 1.0,
+      "irr_p10": -0.06862125865474525,
+      "irr_p50": -0.033100655924359956,
+      "irr_p90": -0.0052631055831440215,
+      "irr_p50_ci95_window_resample": [
+        -0.10961666351054017,
+        0.016962834345620844
+      ],
+      "npv_p10_usd": -52758925.789673775,
+      "npv_p50_usd": -42607818.88550885,
+      "npv_p90_usd": -32280061.860683694,
+      "p_irr_above_hurdle": 0.0,
+      "p_irr_above_hurdle_ci95_window_resample": [
+        0.0,
+        0.0
+      ],
+      "p_npv_positive": 0.0
+    },
+    "perfect|all_8|synthetic_capacity": {
+      "n_draws": 10000,
+      "irr_defined_share": 1.0,
+      "irr_p10": 0.055309096245309934,
+      "irr_p50": 0.07586612403704418,
+      "irr_p90": 0.0966834763101031,
+      "irr_p50_ci95_window_resample": [
+        0.03448296571262731,
+        0.11173356006114814
+      ],
+      "npv_p10_usd": -7219355.764128056,
+      "npv_p50_usd": 2931751.1400368586,
+      "npv_p90_usd": 13259508.164862003,
+      "p_irr_above_hurdle": 0.402,
+      "p_irr_above_hurdle_ci95_window_resample": [
+        0.0,
+        0.9835875000000001
+      ],
+      "p_npv_positive": 0.6446
+    },
+    "perfect|excl_2021_22_and_2022_23|arbitrage_only": {
+      "n_draws": 10000,
+      "irr_defined_share": 1.0,
+      "irr_p10": -0.10432600862458849,
+      "irr_p50": -0.06497621726757441,
+      "irr_p90": -0.036280479793114925,
+      "irr_p50_ci95_window_resample": [
+        -0.1533806438921649,
+        -2.134949443692759e-05
+      ],
+      "npv_p10_usd": -60821764.491259255,
+      "npv_p50_usd": -51965795.9064229,
+      "npv_p90_usd": -43190867.65054943,
+      "p_irr_above_hurdle": 0.0,
+      "p_irr_above_hurdle_ci95_window_resample": [
+        0.0,
+        0.0
+      ],
+      "p_npv_positive": 0.0
+    },
+    "perfect|excl_2021_22_and_2022_23|synthetic_capacity": {
+      "n_draws": 10000,
+      "irr_defined_share": 1.0,
+      "irr_p10": 0.03820085029036422,
+      "irr_p50": 0.05668604360824736,
+      "irr_p90": 0.0747904952844001,
+      "irr_p50_ci95_window_resample": [
+        0.017957403675789685,
+        0.09824456430692614
+      ],
+      "npv_p10_usd": -15282194.465713521,
+      "npv_p50_usd": -6426225.880877189,
+      "npv_p90_usd": 2348702.3749962915,
+      "p_irr_above_hurdle": 0.0477,
+      "p_irr_above_hurdle_ci95_window_resample": [
+        0.0,
+        0.9718500000000001
+      ],
+      "p_npv_positive": 0.1726
+    },
+    "persistence|all_8|arbitrage_only": {
+      "n_draws": 10000,
+      "irr_defined_share": 0.7409,
+      "irr_p10": -1.0,
+      "irr_p50": -0.10084538703869173,
+      "irr_p90": -0.064098682531808,
+      "irr_p50_ci95_window_resample": [
+        -1.0,
+        -0.04333722778793857
+      ],
+      "npv_p10_usd": -67059948.52411749,
+      "npv_p50_usd": -59046448.935650095,
+      "npv_p90_usd": -51371947.19166792,
+      "p_irr_above_hurdle": 0.0,
+      "p_irr_above_hurdle_ci95_window_resample": [
+        0.0,
+        0.0
+      ],
+      "p_npv_positive": 0.0
+    },
+    "persistence|all_8|synthetic_capacity": {
+      "n_draws": 10000,
+      "irr_defined_share": 1.0,
+      "irr_p10": 0.023980960031526787,
+      "irr_p50": 0.04144019486212647,
+      "irr_p90": 0.057695635046808906,
+      "irr_p50_ci95_window_resample": [
+        0.002798327562029138,
+        0.07014316514112912
+      ],
+      "npv_p10_usd": -21520378.49857178,
+      "npv_p50_usd": -13506878.91010439,
+      "npv_p90_usd": -5832377.16612221,
+      "p_irr_above_hurdle": 0.0008,
+      "p_irr_above_hurdle_ci95_window_resample": [
+        0.0,
+        0.14728750000000007
+      ],
+      "p_npv_positive": 0.0098
+    },
+    "persistence|excl_2021_22_and_2022_23|arbitrage_only": {
+      "n_draws": 10000,
+      "irr_defined_share": 0.6574,
+      "irr_p10": -1.0,
+      "irr_p50": -0.13497018379072634,
+      "irr_p90": -0.0816164015336828,
+      "irr_p50_ci95_window_resample": [
+        -1.0,
+        -0.0401071943504732
+      ],
+      "npv_p10_usd": -72102915.70768751,
+      "npv_p50_usd": -64036526.02259621,
+      "npv_p90_usd": -55908101.494601786,
+      "p_irr_above_hurdle": 0.0,
+      "p_irr_above_hurdle_ci95_window_resample": [
+        0.0,
+        0.0
+      ],
+      "p_npv_positive": 0.0
+    },
+    "persistence|excl_2021_22_and_2022_23|synthetic_capacity": {
+      "n_draws": 10000,
+      "irr_defined_share": 1.0,
+      "irr_p10": 0.011861389544548984,
+      "irr_p50": 0.030309395940860684,
+      "irr_p90": 0.047950663168869444,
+      "irr_p50_ci95_window_resample": [
+        -0.01030793970054186,
+        0.07184762875760926
+      ],
+      "npv_p10_usd": -26563345.6821418,
+      "npv_p50_usd": -18496955.997050494,
+      "npv_p90_usd": -10368531.469056068,
+      "p_irr_above_hurdle": 0.0002,
+      "p_irr_above_hurdle_ci95_window_resample": [
+        0.0,
+        0.1518375000000004
+      ],
+      "p_npv_positive": 0.0007
+    }
+  },
+  "regime_hold_one_window": {
+    "perfect|arbitrage_only": {
+      "min": -0.38338434394812093,
+      "median": -0.02351031723639424,
+      "max": 0.0887153973221898,
+      "n_windows_above_hurdle": 1,
+      "n_windows_irr_undefined": 0
+    },
+    "perfect|synthetic_capacity": {
+      "min": -0.013110328197735777,
+      "median": 0.08254218810625402,
+      "max": 0.16967566984856763,
+      "n_windows_above_hurdle": 4,
+      "n_windows_irr_undefined": 0
+    },
+    "persistence|arbitrage_only": {
+      "min": -0.25129022579462224,
+      "median": -0.050432112063596046,
+      "max": -0.006237835119223434,
+      "n_windows_above_hurdle": 0,
+      "n_windows_irr_undefined": 2
+    },
+    "persistence|synthetic_capacity": {
+      "min": -0.041404774918719356,
+      "median": 0.04864294955308357,
+      "max": 0.09442954478528287,
+      "n_windows_above_hurdle": 3,
+      "n_windows_irr_undefined": 0
+    }
+  }
+}
